@@ -1,7 +1,9 @@
 version: "2"
 
 linters:
+  default: none
   enable:
+    - errcheck
     - govet
     - ineffassign
     - staticcheck
@@ -10,9 +12,20 @@ linters:
     - unconvert
     - unparam
   settings:
+    errcheck:
+      check-type-assertions: true
     govet:
       enable:
         - shadow
+  exclusions:
+    rules:
+      - path: _test\.go$
+        linters:
+          - errcheck
+      # Type assertion in pool is safe - pool only contains type T
+      - path: internal/pool/pool.go
+        linters:
+          - errcheck
 
 formatters:
   enable:
