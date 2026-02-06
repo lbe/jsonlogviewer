@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+    steps:
+    - uses: actions/checkout@v5
+    
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.24.2'
+    
+    - name: Build
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        output="jsonlogviewer-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          output="${output}.exe"
+        fi
+        go build -ldflags "-s -w -X main.version=${{ github.ref_name }}" -o "${output}" ./cmd/jsonlogviewer
+        tar czf "${output}.tar.gz" "${output}"
+    
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: '*.tar.gz'
